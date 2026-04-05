@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "staring-into-the-void"
+version = "0.1.0"
+description = "Sub-threshold topological signal recovery from LSST forced photometry"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Brian Sheppard"},
+]
+
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.11",
+    "pandas>=2.0",
+    "scikit-learn>=1.3",
+    "matplotlib>=3.7",
+    "plotly>=5.15",
+    "astropy>=5.3",
+    "ripser>=0.6",
+    "persim>=0.3",
+]
+
+[project.optional-dependencies]
+tda-extra = [
+    "giotto-tda>=0.6",
+    "gudhi>=3.8",
+]
+ztf = [
+    "alerce>=2.0",
+]
+umap = [
+    "umap-learn>=0.5",
+]
+rubin = [
+    "pyvo>=1.4",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "jupyter>=1.0",
+    "ipykernel>=6.0",
+    "nbformat>=5.0",
+]
+all = [
+    "staring-into-the-void[tda-extra,ztf,umap,rubin,dev]",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
