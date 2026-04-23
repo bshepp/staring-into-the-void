@@ -60,10 +60,33 @@ A complete, tested, reproducible Python pipeline:
 | Anomaly detection | `void.analysis.anomaly` | ✅ + power analysis |
 | Sub-threshold attenuation experiment | `void.analysis.attenuation` | ✅ recovery curves |
 
-- **85 unit tests, all passing** (`pytest`).
+- **87 unit tests, all passing** (`pytest`), including a Wolfram
+  Mathematica symbolic ground-truth check at 30-digit precision.
 - **12 publication-style figures** in `output/` from one
-  `python run_phase1_methodology.py` invocation.
+  `python run_phase1_methodology.py` invocation, plus dedicated
+  promotion artifacts in `output/hero_*.png`.
 - MIT-licensed, citable (`CITATION.cff`).
+
+## Dual-validation discipline
+
+This is, deliberately, not a single-stack result.  Every persistent-homology
+claim is cross-checked along two orthogonal axes:
+
+1. **Numerical Monte Carlo** — `void.topology.null_model` builds a calibrated
+   null distribution by resampling pure-noise ensembles through the same
+   embedding + persistence pipeline.  Significance is reported as an empirical
+   p-value with explicit floor `1/N`.  Cloud-scale runs (`N = 10⁴`) execute
+   off-host on Hugging Face Jobs and publish to the public dataset
+   [`bshepp/staring-into-the-void-runs`](https://huggingface.co/datasets/bshepp/staring-into-the-void-runs).
+2. **Symbolic ground-truth** — `validation/symbolic_persistence.wls` computes
+   closed-form Vietoris-Rips H₁ birth/death pairs in Wolfram Mathematica at
+   arbitrary precision.  `tests/test_symbolic_validation.py` re-checks the
+   pinned baseline on every CI run, ensuring `ripser` agrees with exact
+   arithmetic to within float32 precision (≈ 1e-5).
+
+A spurious detection has to fool both layers simultaneously.  The first
+real-data run did not, and produced a clean negative result — exactly the
+behaviour the discipline is designed to enforce.
 
 ## What I'm asking for
 

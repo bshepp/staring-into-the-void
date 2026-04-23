@@ -14,7 +14,9 @@
 
 **Status:** code now uses configurable schema (`SCHEMA_DP1 = "dp1"`,
 overridable via `VOID_RUBIN_SCHEMA` env var).  Defaults updated
-2026-04-22.
+2026-04-22.  *In progress — first ZTF validation run produced a clean
+negative result (n=15 RRL, p=0.15–0.31); cloud sweep at N=10 000 null
+pending via Hugging Face Jobs (see M7).*
 
 **To do:**
 
@@ -79,7 +81,27 @@ overridable via `VOID_RUBIN_SCHEMA` env var).  Defaults updated
 
 ## Phase 2 — DP2 / PPDB readiness (Q3 2026 → early 2027)
 
-### M6. Forced-photometry full integration
+### M6. Symbolic ground-truth verification ✅ **DONE**
+
+- [x] `validation/symbolic_persistence.wls` — Wolfram closed-form
+  Vietoris-Rips H₁ baseline (30-digit precision) for `circle_8` and
+  `gaussian_blob` test clouds.
+- [x] `tests/test_symbolic_validation.py` — verifies `ripser` agrees
+  with Mathematica to within float32 precision (`abs_tol = 1e-5`).
+- [x] Pinned baseline at [validation/symbolic_diagrams.json](../validation/symbolic_diagrams.json)
+  re-checked on every test run.
+
+### M7. Continuous Monte Carlo via HF Jobs 🟡 **in progress**
+
+- [x] `scripts/hf_jobs/null_sweep.py` — PEP-723 UV script for N=10 000
+  null + attenuation sweep on real ZTF RRL.
+- [x] `scripts/hf_jobs/submit.py` — dry-run + live submitter with
+  dataset volume mounting.
+- [ ] First live submit; publish artifacts to
+  [`bshepp/staring-into-the-void-runs`](https://huggingface.co/datasets/bshepp/staring-into-the-void-runs).
+- [ ] Schedule monthly re-runs as ZTF DR expands.
+
+### M8. Forced-photometry full integration
 
 - [ ] When DP2 (or a PPDB precursor) lands, run end-to-end against
   `DiaForcedSource` instead of `DiaSource`.
@@ -88,7 +110,7 @@ overridable via `VOID_RUBIN_SCHEMA` env var).  Defaults updated
 - [ ] Add `void.data.rubin.stream_forced_sources()` for chunked
   iteration over a region.
 
-### M7. Anomaly stream prototype
+### M9. Anomaly stream prototype
 
 - [ ] `void.streaming` module — adapter that consumes a Kafka topic
   (Rubin alert stream / broker output) and emits flagged-ensemble
@@ -96,7 +118,7 @@ overridable via `VOID_RUBIN_SCHEMA` env var).  Defaults updated
 - [ ] Define output VOEvent schema for "topological ensemble anomaly".
 - [ ] Demo with a 1-night replay against ZTF Public Survey alerts.
 
-### M8. Second paper — first detection
+### M10. Second paper — first detection
 
 - [ ] Submit "First sub-threshold population recovery from LSST
   DiaForcedSource" once DP2 / early operations data permits a real

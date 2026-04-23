@@ -12,6 +12,12 @@ forced-photometry light curves *below* the LSST 5σ single-epoch
 detection threshold, searching for astrophysical structure in
 populations no broker classifier can see.
 
+![Topology signature of three light-curve classes](output/hero_01_topology_signature.png)
+
+*Top: Takens-embedded point clouds for periodic, transient, and stochastic
+sources at SNR = 10. Bottom: their persistence diagrams. The H₁ count and
+lifetime sum encode the structural signature recovered from the time series.*
+
 - **What it does** — [docs/SCIENCE_PITCH.md](docs/SCIENCE_PITCH.md)
 - **Where it's going** — [docs/ROADMAP.md](docs/ROADMAP.md)
 - **Who it's for** — [docs/OUTREACH.md](docs/OUTREACH.md)
@@ -52,6 +58,28 @@ dgm = compute_persistence(cloud, maxdim=1)
 $env:VOID_RUBIN_SCHEMA = "dp1"                 # default (LSSTComCam, public Jun 2025)
 $env:VOID_RUBIN_SCHEMA = "dp02_dc2_catalogs"   # DC2 simulation
 ```
+
+## Validation tiers
+
+Three independent layers cross-check the pipeline:
+
+| Tier | Purpose | Invocation |
+|------|---------|------------|
+| **Local pytest** | Unit + integration tests on every commit | `pytest -q` (87 passing) |
+| **Wolfram symbolic ground-truth** | Closed-form Vietoris-Rips H₁ at 30-digit precision; pinned baseline | `wolframscript -file validation/symbolic_persistence.wls` |
+| **HF Jobs cloud Monte Carlo** | N=10 000 null calibration + attenuation sweep on real ZTF RRL | `python scripts/hf_jobs/submit.py --live` |
+
+The symbolic baseline at [validation/symbolic_diagrams.json](validation/symbolic_diagrams.json)
+is re-checked by [tests/test_symbolic_validation.py](tests/test_symbolic_validation.py)
+on every test run, ensuring `ripser` agrees with Mathematica's exact arithmetic
+to within float32 precision (≈1e-5).
+
+### Reproducibility
+
+Cloud-run artifacts (NPZ archives, manifests, plots) are written to the public
+dataset [`bshepp/staring-into-the-void-runs`](https://huggingface.co/datasets/bshepp/staring-into-the-void-runs).
+See [scripts/hf_jobs/README.md](scripts/hf_jobs/README.md) for setup and
+local artifact retrieval.
 
 ## Project structure
 
