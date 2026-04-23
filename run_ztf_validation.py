@@ -150,9 +150,13 @@ if len(source_lcs) < 5:
     source_lcs = [lc for lc in source_lcs if len(lc.fluxes) >= 20][:10]
 print(f"\n6. Attenuation experiment: {len(source_lcs)} high-SNR RR Lyrae")
 
-noise_lcs = [generate_noise(n_epochs=150, rng=np.random.default_rng(rng.integers(0, 2**63))) for _ in range(150)]
+# Match null pool size to the real source count so the background topology
+# is computed on a comparable cloud (was dominated by 150 noise sources).
+n_pool = max(len(source_lcs) * 2, 30)
+noise_lcs = [generate_noise(n_epochs=150, rng=np.random.default_rng(rng.integers(0, 2**63))) for _ in range(n_pool)]
+# 200 realizations gives a usable p-floor of 1/200 = 0.005, well below 0.05.
 null_dist = build_null_distribution(
-    n_realizations=15,
+    n_realizations=200,
     n_sources_per=len(source_lcs) + len(noise_lcs),
     n_epochs=150,
     embedder=embedder,
