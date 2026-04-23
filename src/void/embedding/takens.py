@@ -14,13 +14,30 @@ strategies.
 
 from __future__ import annotations
 
-from typing import Optional
-
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.signal import argrelextrema
 
 from void.data.models import LightCurve, MultiBandLightCurve
+
+
+def _dedupe_times(times: np.ndarray, fluxes: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Collapse duplicate timestamps by averaging flux values.
+
+    Required before `scipy.interpolate.interp1d`, which divides by
+    `x_hi - x_lo` and would emit a divide-by-zero warning at duplicate x.
+    Inputs are assumed already sorted by time.
+    """
+    if len(times) == 0:
+        return times, fluxes
+    unique_t, inverse = np.unique(times, return_inverse=True)
+    if len(unique_t) == len(times):
+        return times, fluxes
+    summed = np.zeros_like(unique_t, dtype=float)
+    counts = np.zeros_like(unique_t, dtype=float)
+    np.add.at(summed, inverse, fluxes)
+    np.add.at(counts, inverse, 1.0)
+    return unique_t, summed / counts
 
 
 class TakensEmbedder:
@@ -49,7 +66,7 @@ class TakensEmbedder:
         delay: int = 1,
         stride: int = 1,
         interpolation: str = "linear",
-        n_resample: Optional[int] = None,
+        n_resample: int | None = None,
     ):
         self.dimension = dimension
         self.delay = delay
@@ -108,11 +125,17 @@ class TakensEmbedder:
         raise ValueError(f"Unknown mode: {mode}")
 
     def _resample(self, lc: LightCurve) -> np.ndarray:
-        """Interpolate to a regular time grid."""
+        """Interpolate to a regular time grid.
+
+        Duplicate timestamps (e.g. from interleaved multi-band series) are
+        collapsed by averaging fluxes at identical times before interpolation
+        to avoid divide-by-zero in `scipy.interpolate.interp1d`.
+        """
         n = self.n_resample or lc.n_epochs
-        t_regular = np.linspace(lc.times[0], lc.times[-1], n)
+        times, fluxes = _dedupe_times(lc.times, lc.fluxes)
+        t_regular = np.linspace(times[0], times[-1], n)
         kind = self.interpolation if self.interpolation in ("linear", "cubic") else "linear"
-        f = interp1d(lc.times, lc.fluxes, kind=kind, fill_value="extrapolate")
+        f = interp1d(times, fluxes, kind=kind, fill_value="extrapolate")
         return f(t_regular)
 
     def _delay_embed(self, series: np.ndarray) -> np.ndarray:
@@ -138,7 +161,7 @@ def optimal_delay(
     lc: LightCurve,
     max_lag: int = 50,
     method: str = "mutual_information",
-    n_resample: Optional[int] = None,
+    n_resample: int | None = None,
 ) -> int:
     """Estimate optimal time delay tau for Takens embedding.
 
@@ -184,7 +207,7 @@ def optimal_dimension(
     delay: int = 1,
     max_dim: int = 10,
     threshold: float = 0.01,
-    n_resample: Optional[int] = None,
+    n_resample: int | None = None,
 ) -> int:
     """Estimate optimal embedding dimension via false nearest neighbors.
 

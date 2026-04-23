@@ -7,6 +7,7 @@ point clouds produced by Takens embedding.
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -16,6 +17,12 @@ try:
     from ripser import ripser
 except ImportError:
     ripser = None
+
+# ripser emits a heuristic UserWarning when a point cloud has more columns
+# than rows ("did you mean to transpose?"). For ensemble feature-space
+# clouds — where each row is a source and each column is a TDA-derived
+# feature — having d > n is expected and correct, so we silence that
+# specific warning at the call sites below.
 
 try:
     from persim import PersistenceImager
@@ -170,12 +177,18 @@ def compute_persistence(
     if ripser is None:
         raise ImportError("ripser is required for persistence computation")
 
-    result = ripser(
-        point_cloud,
-        maxdim=maxdim,
-        thresh=thresh,
-        coeff=coeff,
-    )
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="The input point cloud has more columns than rows",
+            category=UserWarning,
+        )
+        result = ripser(
+            point_cloud,
+            maxdim=maxdim,
+            thresh=thresh,
+            coeff=coeff,
+        )
 
     return PersistenceDiagram(
         diagrams=result["dgms"],

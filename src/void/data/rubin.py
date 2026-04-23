@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -36,6 +37,20 @@ RSP_TAP_URL = "https://data.lsst.cloud/api/tap"
 CACHE_DIR = Path(".void_cache/rubin")
 
 LSST_BANDS = ["u", "g", "r", "i", "z", "y"]
+
+# TAP catalog schemas exposed by the Rubin Science Platform.  Override
+# the active schema via the VOID_RUBIN_SCHEMA env var or by passing the
+# `schema=` keyword to query helpers.  Known values (April 2026):
+#
+#   dp1                  - Data Preview 1 (LSSTComCam, public Jun 2025)
+#   dp02_dc2_catalogs    - Data Preview 0.2 (DC2 simulation, public)
+#   dp03_catalogs        - Data Preview 0.3 (Solar System sims)
+#
+# Until DP2 is released (mid-2026) DP1 is the deepest real on-sky catalog
+# with DiaObject/DiaSource/DiaForcedSource records.
+SCHEMA_DP1 = "dp1"
+SCHEMA_DP02_DC2 = "dp02_dc2_catalogs"
+DEFAULT_SCHEMA = os.environ.get("VOID_RUBIN_SCHEMA", SCHEMA_DP1)
 
 
 def get_tap_service(tap_url: str | None = None):
@@ -89,6 +104,7 @@ def query_near_threshold_objects(
     min_mean_snr: float = 0.5,
     bands: list[str] | None = None,
     tap_url: str | None = None,
+    schema: str = DEFAULT_SCHEMA,
 ) -> pd.DataFrame:
     """Query DiaObjects near the detection threshold.
 
@@ -136,7 +152,7 @@ def query_near_threshold_objects(
         rPSFluxMean, rPSFluxSigma, rPSFluxNdata,
         iPSFluxMean, iPSFluxSigma, iPSFluxNdata,
         zPSFluxMean, zPSFluxSigma, zPSFluxNdata
-    FROM dp1_dc2_catalogs.DiaObject
+    FROM {schema}.DiaObject
     WHERE nDiaSources >= {min_n_dia_sources}
       AND ({band_clause})
     ORDER BY nDiaSources DESC
@@ -152,6 +168,7 @@ def query_dia_objects_in_region(
     radius_deg: float = 1.0,
     max_objects: int = 1000,
     tap_url: str | None = None,
+    schema: str = DEFAULT_SCHEMA,
 ) -> pd.DataFrame:
     """Query DiaObjects within a cone search region.
 
@@ -172,7 +189,7 @@ def query_dia_objects_in_region(
         gPSFluxMean, gPSFluxSigma, gPSFluxNdata,
         rPSFluxMean, rPSFluxSigma, rPSFluxNdata,
         iPSFluxMean, iPSFluxSigma, iPSFluxNdata
-    FROM dp1_dc2_catalogs.DiaObject
+    FROM {schema}.DiaObject
     WHERE CONTAINS(
         POINT('ICRS', ra, dec),
         CIRCLE('ICRS', {ra}, {dec}, {radius_deg})
@@ -193,6 +210,7 @@ def get_dia_source_light_curve(
     dia_object_id: int,
     tap_url: str | None = None,
     use_cache: bool = True,
+    schema: str = DEFAULT_SCHEMA,
 ) -> MultiBandLightCurve:
     """Download DiaSource light curve for a single DiaObject.
 
@@ -208,7 +226,7 @@ def get_dia_source_light_curve(
 
     adql = f"""
     SELECT midpointMjdTai, band, psfFlux, psfFluxErr
-    FROM dp1_dc2_catalogs.DiaSource
+    FROM {schema}.DiaSource
     WHERE diaObjectId = {dia_object_id}
     ORDER BY midpointMjdTai
     """
@@ -230,6 +248,7 @@ def get_forced_photometry(
     dia_object_id: int,
     tap_url: str | None = None,
     use_cache: bool = True,
+    schema: str = DEFAULT_SCHEMA,
 ) -> MultiBandLightCurve:
     """Download DiaForcedSource light curve for a single DiaObject.
 
@@ -249,7 +268,7 @@ def get_forced_photometry(
 
     adql = f"""
     SELECT midpointMjdTai, band, psfFlux, psfFluxErr
-    FROM dp1_dc2_catalogs.DiaForcedSource
+    FROM {schema}.DiaForcedSource
     WHERE diaObjectId = {dia_object_id}
     ORDER BY midpointMjdTai
     """
