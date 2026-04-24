@@ -66,3 +66,4 @@ data/processed/
 
 # Logs
 *.log
+job_logs.txt

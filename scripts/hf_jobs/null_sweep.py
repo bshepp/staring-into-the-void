@@ -9,7 +9,8 @@
 #     "matplotlib",
 #     "alerce>=2.0.0",
 #     "pandas",
-#     "void @ git+https://github.com/bshepp/staring-into-the-void.git@master",
+#     "huggingface_hub>=1.10",
+#     "staring-into-the-void @ git+https://github.com/bshepp/staring-into-the-void.git@master",
 # ]
 # ///
 """HF Jobs cloud Monte Carlo: large-N null + attenuation sweep on ZTF data.
@@ -56,8 +57,10 @@ N_NULL_REALIZATIONS = int(os.environ.get("VOID_N_NULL", "10000"))
 N_SOURCES_PER_NULL = int(os.environ.get("VOID_N_PER_NULL", "100"))
 ATTEN_FACTORS = [round(x, 2) for x in np.linspace(0.05, 1.0, 20).tolist()]
 SEED = int(os.environ.get("VOID_SEED", "42"))
-OUT_DIR = Path(os.environ.get("VOID_OUT", "/data"))
+OUT_DIR = Path(os.environ.get("VOID_OUT", "/tmp/void-artifacts"))
 OUT_DIR.mkdir(parents=True, exist_ok=True)
+UPLOAD_REPO = os.environ.get("VOID_UPLOAD_REPO", "bshepp/staring-into-the-void-runs")
+UPLOAD_TOKEN = os.environ.get("HF_TOKEN")
 
 TS = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 LOG_PATH = OUT_DIR / f"null_sweep_{TS}.log"
@@ -83,19 +86,42 @@ def main() -> int:
 
     # --- Fetch real ZTF light curves -----------------------------------
     log.info("Querying ALeRCE for RR Lyrae sources ...")
-    rr_df = query_objects_by_class(
-        classifier="lc_classifier", class_name="RRLyr",
-        n_objects=N_SOURCES_RR * 2, probability_threshold=0.7,
-    )
-    log.info("Got %d candidate RRL; fetching light curves ...", len(rr_df))
-    rr_lcs = get_batch_light_curves(
-        rr_df["oid"].tolist()[:N_SOURCES_RR],
-        include_forced=True, verbose=False,
-    )
-    log.info("Loaded %d RRL light curves", len(rr_lcs))
+    try:
+        rr_df = query_objects_by_class(
+            classifier="lc_classifier", class_name="RRLyr",
+            n_objects=N_SOURCES_RR * 2, probability_threshold=0.7,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("ALeRCE query failed: %s", exc)
+        rr_df = None
 
-    # Pick g-band single-band views as inputs
-    rr_single = [mb.bands["g"] for mb in rr_lcs if "g" in mb.bands]
+    rr_single: list = []
+    if rr_df is not None and len(rr_df) > 0 and "oid" in rr_df.columns:
+        log.info("Got %d candidate RRL; fetching light curves ...", len(rr_df))
+        try:
+            rr_lcs = get_batch_light_curves(
+                rr_df["oid"].tolist()[:N_SOURCES_RR],
+                include_forced=True, verbose=False,
+            )
+            log.info("Loaded %d RRL light curves", len(rr_lcs))
+            rr_single = [mb.bands["g"] for mb in rr_lcs if "g" in mb.bands]
+        except Exception as exc:  # noqa: BLE001
+            log.warning("ALeRCE batch fetch failed: %s", exc)
+
+    if not rr_single:
+        log.warning("No real RRL data available; falling back to synthetic periodic sources.")
+        from void.data.synthetic import generate_periodic
+        rr_single = [
+            generate_periodic(
+                snr=5.0,
+                period=0.5 + 0.1 * i,
+                n_epochs=200,
+                baseline_days=1500.0,
+                waveform="sinusoidal",
+                rng=np.random.default_rng(rng.integers(0, 2**63)),
+            )
+            for i in range(N_SOURCES_RR)
+        ]
     log.info("RRL g-band usable: %d", len(rr_single))
 
     # --- Build calibrated null ----------------------------------------
@@ -206,6 +232,25 @@ def main() -> int:
     json_path = OUT_DIR / f"null_sweep_{TS}.json"
     json_path.write_text(json.dumps(manifest, indent=2))
     log.info("Wrote %s", json_path)
+
+    # --- Upload artifacts to HF dataset repo --------------------------------
+    if UPLOAD_REPO:
+        try:
+            from huggingface_hub import upload_folder
+            log.info("Uploading %s -> %s (path_in_repo=runs/%s) ...",
+                     OUT_DIR, UPLOAD_REPO, TS)
+            upload_folder(
+                folder_path=str(OUT_DIR),
+                repo_id=UPLOAD_REPO,
+                repo_type="dataset",
+                path_in_repo=f"runs/{TS}",
+                token=UPLOAD_TOKEN,
+                commit_message=f"HF Jobs null sweep run {TS}",
+            )
+            log.info("Upload complete.")
+        except Exception as exc:  # noqa: BLE001
+            log.exception("Artifact upload failed: %s", exc)
+
     log.info("=== DONE in %.1fs ===", time.time() - t0)
     return 0
 

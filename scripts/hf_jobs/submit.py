@@ -30,18 +30,14 @@ def build_spec(args: argparse.Namespace) -> dict:
         "script": str(SCRIPT.relative_to(Path.cwd())) if SCRIPT.is_relative_to(Path.cwd()) else str(SCRIPT),
         "flavor": args.flavor,
         "timeout": args.timeout,
-        "dataset_volume": {
-            "source": args.dataset,
-            "mount_path": "/data",
-            "type": "dataset",
-        },
+        "upload_repo": args.dataset,
         "env_overrides": {
             "VOID_N_RR": args.n_rr,
             "VOID_N_AGN": args.n_agn,
             "VOID_N_NULL": args.n_null,
             "VOID_N_PER_NULL": args.n_per_null,
             "VOID_SEED": args.seed,
-            "VOID_OUT": "/data",
+            "VOID_OUT": "/tmp/void-artifacts",
         },
     }
 
@@ -73,28 +69,31 @@ def main(argv: list[str] | None = None) -> int:
 
     # Live submit -- import here so dry-run works without the dep
     try:
-        from huggingface_hub import run_uv_job
-        from huggingface_hub.inference._jobs import Volume
+        from huggingface_hub import run_uv_job, get_token
     except ImportError as e:
         print(f"ERROR: huggingface_hub with jobs API required: {e}",
               file=sys.stderr)
         return 2
 
-    volume = Volume(
-        type="dataset",
-        source=args.dataset,
-        mount_path="/data",
-    )
+    token = get_token()
+    if not token:
+        print("ERROR: no HF token found. Run `hf auth login` first.",
+              file=sys.stderr)
+        return 3
+
+    env = {k: str(v) for k, v in spec["env_overrides"].items()}
+    env["VOID_UPLOAD_REPO"] = args.dataset
     job = run_uv_job(
         script=str(SCRIPT),
         flavor=args.flavor,
         timeout=args.timeout,
-        volumes=[volume],
-        env={k: str(v) for k, v in spec["env_overrides"].items()},
+        env=env,
+        secrets={"HF_TOKEN": token},
     )
     print(f"\nSubmitted job: {job.id}")
     print(f"Tail logs:  hf jobs logs {job.id}")
     print(f"Status:     hf jobs ps")
+    print(f"Artifacts:  https://huggingface.co/datasets/{args.dataset}/tree/main/runs")
     return 0
 
 
