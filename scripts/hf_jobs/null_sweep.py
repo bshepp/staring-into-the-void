@@ -22,7 +22,7 @@ Outputs (all written to /data):
   null_sweep_<TS>.npz     numpy archive of null summary stats
   null_sweep_<TS>.json    metadata + run parameters
   null_sweep_<TS>.log     full stdout log
-  null_h1_hist_<TS>.png   histogram of total_persistence_h1 under null
+  null_h1_hist_<TS>.png   histogram of total_persistence_H1 under null
   attenuation_<TS>.png    attenuation curve (p-value vs flux factor)
   feature_space_<TS>.png  ensemble cloud projection
 """
@@ -135,7 +135,7 @@ def main() -> int:
         rng=np.random.default_rng(rng.integers(0, 2**63)),
         verbose=True,
     )
-    _h1_idx = null.stat_names.index("total_persistence_h1")
+    _h1_idx = null.stat_names.index("total_persistence_H1")
     log.info("Null built. mean(H1_pers)=%.3f std=%.3f",
              float(null.mean()[_h1_idx]),
              float(null.std()[_h1_idx]))
@@ -150,7 +150,7 @@ def main() -> int:
     log.info("Wrote %s", npz_path)
 
     # Histogram
-    idx = null.stat_names.index("total_persistence_h1")
+    idx = null.stat_names.index("total_persistence_H1")
     fig, ax = plt.subplots(figsize=(9, 5))
     ax.hist(null.summary_stats[:, idx], bins=80, color="steelblue", alpha=0.8)
     ax.set_xlabel(r"$\sum$ persistence ($H_1$)")
@@ -222,7 +222,7 @@ def main() -> int:
                 {
                     "factor": r.factor,
                     "p_value": r.p_value,
-                    "total_persistence_h1": r.total_persistence_h1,
+                    "total_persistence_H1": r.total_persistence_h1,
                     "detected": bool(r.detected),
                 }
                 for r in atten.results
