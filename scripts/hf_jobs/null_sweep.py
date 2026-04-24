@@ -135,9 +135,10 @@ def main() -> int:
         rng=np.random.default_rng(rng.integers(0, 2**63)),
         verbose=True,
     )
+    _h1_idx = null.stat_names.index("total_persistence_h1")
     log.info("Null built. mean(H1_pers)=%.3f std=%.3f",
-             null.mean("total_persistence_h1"),
-             null.std("total_persistence_h1"))
+             float(null.mean()[_h1_idx]),
+             float(null.std()[_h1_idx]))
 
     # Persist the raw null
     npz_path = OUT_DIR / f"null_sweep_{TS}.npz"
@@ -215,8 +216,8 @@ def main() -> int:
         },
         "results": {
             "rr_loaded": len(rr_single),
-            "null_mean_h1": float(null.mean("total_persistence_h1")),
-            "null_std_h1": float(null.std("total_persistence_h1")),
+            "null_mean_h1": float(null.mean()[_h1_idx]),
+            "null_std_h1": float(null.std()[_h1_idx]),
             "attenuation": [
                 {
                     "factor": r.factor,
