@@ -15,8 +15,9 @@
 **Status:** code now uses configurable schema (`SCHEMA_DP1 = "dp1"`,
 overridable via `VOID_RUBIN_SCHEMA` env var).  Defaults updated
 2026-04-22.  *In progress — first ZTF validation run produced a clean
-negative result (n=15 RRL, p=0.15–0.31); cloud sweep at N=10 000 null
-pending via Hugging Face Jobs (see M7).*
+negative result (n=15 RRL, p=0.15–0.31); cloud sweep at N=10 000
+completed 2026-04-24 but silently fell back to synthetic sources due
+to a bug since diagnosed — real-data re-run pending (see M7).*
 
 **To do:**
 
@@ -46,7 +47,7 @@ pending via Hugging Face Jobs (see M7).*
 
 ### M3. CI / quality gates
 
-- [ ] `.github/workflows/ci.yml` — pytest on Python 3.10/3.11/3.12/3.13.
+- [x] `.github/workflows/ci.yml` — pytest on Python 3.10/3.11/3.12/3.13.
 - [ ] Add `ruff` + `ruff format` to dev group; run in CI.
 - [ ] Coverage badge via `pytest --cov=void --cov-report=xml` +
   Codecov.
@@ -95,10 +96,18 @@ pending via Hugging Face Jobs (see M7).*
 
 - [x] `scripts/hf_jobs/null_sweep.py` — PEP-723 UV script for N=10 000
   null + attenuation sweep on real ZTF RRL.
-- [x] `scripts/hf_jobs/submit.py` — dry-run + live submitter with
-  dataset volume mounting.
-- [ ] First live submit; publish artifacts to
-  [`bshepp/staring-into-the-void-runs`](https://huggingface.co/datasets/bshepp/staring-into-the-void-runs).
+- [x] `scripts/hf_jobs/submit.py` — dry-run + live submitter
+  (upload-folder artifact publishing).
+- [x] First live submit (2026-04-24) — ran end-to-end and published
+  artifacts to
+  [`bshepp/staring-into-the-void-runs`](https://huggingface.co/datasets/bshepp/staring-into-the-void-runs),
+  **but silently fell back to synthetic sources** (an `oid`
+  index/column bug in `null_sweep.py` makes the real-data path
+  unreachable).  Null-calibration halves valid; attenuation halves
+  synthetic-only.  Provenance notice published on the dataset.
+- [ ] Fix the real-data path: hard-fail instead of silent fallback,
+  stamp data provenance (source, OIDs, git SHA, versions) into the
+  manifest, then re-run on real ZTF RRL.
 - [ ] Schedule monthly re-runs as ZTF DR expands.
 
 ### M8. Forced-photometry full integration

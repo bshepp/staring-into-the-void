@@ -78,6 +78,9 @@ claim is cross-checked along two orthogonal axes:
    p-value with explicit floor `1/N`.  Cloud-scale runs (`N = 10⁴`) execute
    off-host on Hugging Face Jobs and publish to the public dataset
    [`bshepp/staring-into-the-void-runs`](https://huggingface.co/datasets/bshepp/staring-into-the-void-runs).
+   (Runs to date used synthetic sources throughout — a data-loading bug
+   bypassed the real-ZTF path; see the dataset card.  The null
+   calibrations stand; the attenuation sweeps await a real-data re-run.)
 2. **Symbolic ground-truth** — `validation/symbolic_persistence.wls` computes
    closed-form Vietoris-Rips H₁ birth/death pairs in Wolfram Mathematica at
    arbitrary precision.  `tests/test_symbolic_validation.py` re-checks the

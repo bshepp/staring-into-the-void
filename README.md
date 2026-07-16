@@ -2,7 +2,7 @@
 
 **Sub-Threshold Topological Signal Recovery from LSST Forced Photometry**
 
-[![tests](https://img.shields.io/badge/tests-85%20passing-brightgreen)](tests/)
+[![CI](https://github.com/bshepp/staring-into-the-void/actions/workflows/ci.yml/badge.svg)](https://github.com/bshepp/staring-into-the-void/actions/workflows/ci.yml)
 [![python](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![status](https://img.shields.io/badge/status-Phase%201%20methodology-orange)](docs/ROADMAP.md)
@@ -31,7 +31,7 @@ python -m venv .venv
 # source .venv/bin/activate     # Linux/Mac
 
 pip install -e ".[dev]"
-pytest                          # 85 tests, ~9 s
+pytest                          # 87 tests, ~10 s
 python run_phase1_methodology.py   # regenerates output/paper/*.png
 ```
 
@@ -67,7 +67,7 @@ Three independent layers cross-check the pipeline:
 |------|---------|------------|
 | **Local pytest** | Unit + integration tests on every commit | `pytest -q` (87 passing) |
 | **Wolfram symbolic ground-truth** | Closed-form Vietoris-Rips H₁ at 30-digit precision; pinned baseline | `wolframscript -file validation/symbolic_persistence.wls` |
-| **HF Jobs cloud Monte Carlo** | N=10 000 null calibration + attenuation sweep on real ZTF RRL | `python scripts/hf_jobs/submit.py --live` |
+| **HF Jobs cloud Monte Carlo** | N=10 000 null calibration + attenuation sweep (synthetic sources; real-ZTF mode pending — see note below) | `python scripts/hf_jobs/submit.py --live` |
 
 The symbolic baseline at [validation/symbolic_diagrams.json](validation/symbolic_diagrams.json)
 is re-checked by [tests/test_symbolic_validation.py](tests/test_symbolic_validation.py)
@@ -80,6 +80,14 @@ Cloud-run artifacts (NPZ archives, manifests, plots) are written to the public
 dataset [`bshepp/staring-into-the-void-runs`](https://huggingface.co/datasets/bshepp/staring-into-the-void-runs).
 See [scripts/hf_jobs/README.md](scripts/hf_jobs/README.md) for setup and
 local artifact retrieval.
+
+> **Provenance note (2026-07-15):** the two published runs (2026-04-24)
+> were intended to use real ZTF RR Lyrae but silently fell back to
+> synthetic periodic sources due to a bug in `null_sweep.py` (since
+> diagnosed).  Their null-calibration halves are valid (nulls are
+> synthetic by design); their attenuation sweeps are synthetic-only and
+> should not be cited as real-data validation.  See the dataset card for
+> details.  A corrected run on real ZTF data will replace them.
 
 ## Project structure
 
@@ -97,8 +105,8 @@ run_power_analysis.py        SNR × population-size sensitivity
 run_ztf_validation.py        ALeRCE → topology pipeline
 
 notebooks/   01–05 interactive; 06 (DP1) pending RSP access
-tests/       85 unit tests, all passing
-output/      12 publication-style figures (regenerable)
+tests/       87 unit tests, all passing
+output/      publication-style figures (regenerable via the run scripts)
 docs/        SCIENCE_PITCH.md · OUTREACH.md · ROADMAP.md
 ```
 
@@ -115,7 +123,7 @@ docs/        SCIENCE_PITCH.md · OUTREACH.md · ROADMAP.md
 ## Dependencies
 
 - **TDA** — `ripser`, `persim` (core); `giotto-tda`, `gudhi` (`tda-extra` group).
-- **Astronomy** — `astropy`, `alerce`, `pyvo` (`rubin` group).
+- **Astronomy** — `astropy` (core); `alerce` (`ztf` group); `pyvo` (`rubin` group).
 - **Core** — `numpy`, `scipy`, `pandas`, `scikit-learn`.
 - **Viz** — `matplotlib`, `plotly`, `umap-learn` (`umap` group).
 

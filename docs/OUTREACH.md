@@ -112,13 +112,12 @@ Cold-email or DM via mastodon.social / bluesky.app.
 > invisible to current alert-stream classifiers.
 >
 > A short overview is at:
-> <https://github.com/bshepp/staring-into-the-void/blob/main/docs/SCIENCE_PITCH.md>
+> <https://github.com/bshepp/staring-into-the-void/blob/master/docs/SCIENCE_PITCH.md>
 >
 > The methodology paper is in preparation for arXiv submission in
 > [month/year], and a working DP1 smoke-test notebook is included in
-> the repository.  85 unit tests pass; the full Phase 1 figure set
-> (`output/`) regenerates in under 10 minutes from `python
-> run_phase1_methodology.py`.
+> the repository.  87 unit tests pass in CI; the full Phase 1 figure
+> set regenerates in under 10 minutes from the run scripts.
 >
 > I would welcome the opportunity to present at a working-group call
 > and to receive feedback from members whose work this most directly
@@ -149,7 +148,7 @@ Cold-email or DM via mastodon.social / bluesky.app.
 > guidance on the contribution path and a sponsor.
 >
 > Code: <https://github.com/bshepp/staring-into-the-void>
-> Pitch: <https://github.com/bshepp/staring-into-the-void/blob/main/docs/SCIENCE_PITCH.md>
+> Pitch: <https://github.com/bshepp/staring-into-the-void/blob/master/docs/SCIENCE_PITCH.md>
 >
 > Brian Sheppard
 
@@ -173,7 +172,7 @@ Cold-email or DM via mastodon.social / bluesky.app.
 > below the single-epoch detection threshold.
 >
 > **Deliverables.**
-> 1. Open-source production pipeline (MIT-licensed, ~6k LOC, 85 tests).
+> 1. Open-source production pipeline (MIT-licensed, ~6k LOC, 87 tests).
 > 2. Methodology paper validated on ZTF and DP1 (in preparation).
 > 3. Daily-cadence flagged-ensemble VOEvent / Kafka stream.
 > 4. Public dashboard with persistence-diagram time evolution.

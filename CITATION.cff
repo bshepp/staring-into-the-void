@@ -2,7 +2,6 @@ cff-version: 1.2.0
 message: "If you use this software or methodology, please cite it as below."
 title: "Staring Into the Void: Sub-Threshold Topological Signal Recovery from LSST Forced Photometry"
 version: 0.1.0
-date-released: 2026-04-22
 license: MIT
 type: software
 authors:
